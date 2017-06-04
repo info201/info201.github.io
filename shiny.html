@@ -32,8 +32,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon">
-<link rel="prev" href="index.html">
-<link rel="next" href="command-line.html">
+<link rel="prev" href="git-branches.html">
+
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
@@ -339,98 +339,273 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="setup-machine" class="section level1">
-<h1><span class="header-section-number">Chapter 1</span> Setting up your Machine</h1>
-<p>We’ll be using a variety of different software programs to write, manage, and execute the code that we write. Unfortunately, one of the most frustrating and confusing barriers to working with code is simply getting your machine properly set up. This chapter aims to provide sufficient information for setting up your machine, and troubleshooting the process.</p>
-<p class="alert alert-info">
-Note that iSchool lab machines should have all appropriate software already installed and ready to use.
-</p>
-<p>In short, you’ll need to install the following programs: see below for more information / options.</p>
+<div id="shiny" class="section level1">
+<h1><span class="header-section-number">Chapter 15</span> The <code>shiny</code> Framework</h1>
+<p>Adding <strong>interactivity</strong> to a data report is a highly effective way of communicating that information and enabling users to explore a data set. In this chapter you will learn about the <strong>Shiny</strong> framework for building interactive applications in R. Shiny provides a structure for communicating between a user-interface (i.e., a web-browser) and an R session, allowing users to interactively change the “code” that is run and the data that are outputted. This not only enables developers to create interactive graphics, but provides a way for users to interact directly with an R session (without writing any code!).</p>
+<div id="creating-shiny-apps" class="section level2">
+<h2><span class="header-section-number">15.1</span> Creating Shiny Apps</h2>
+<p>Shiny is a <strong>web application framework for R</strong>. As opposed to a simple (static) web page like you’ve created with R Markdown, a <em>web application</em> is an interactive, dynamic web page—the user can click on buttons, check boxes, or input text in order to change the presentation of the data. Shiny is a <em>framework</em> in it provides the “code” for producing and enabling this interaction, while you as the developer simply “fill in the blanks” by providing <em>variables</em> or <em>functions</em> that the provided code will utilize to create the interactive page.</p>
+<p><code>shiny</code> is another external package (like <code>dplyr</code> and <code>ggplot2</code>), so you will need to install and load it in order to use it:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">install.packages</span>(<span class="st">&quot;shiny&quot;</span>)  <span class="co"># once per machine</span>
+<span class="kw">library</span>(<span class="st">&quot;shiny&quot;</span>)</code></pre></div>
+<p>This will make all of the framework functions and variables you will need to worth with available.</p>
+<div id="application-structure" class="section level3">
+<h3><span class="header-section-number">15.1.1</span> Application Structure</h3>
+<p>Shiny applications are divided into two parts:</p>
+<ol style="list-style-type: decimal">
+<li><p>The <strong>User Interface (UI)</strong> defines how the application will be <em>displayed</em> in the browser. The UI can render R content such as text or graphics just like R Markdown, but it can also include <strong>widgets</strong>, which are interactive controls for your application (think buttons or sliders). The UI can specify a <strong>layout</strong> for these components (e.g., so you can put widgets above, below, or beside one another).</p>
+<p>The UI for a Shiny application is defined as a <strong>value</strong>, usually one returned from calling a <strong>layout function</strong>. For example:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The ui is the result of calling the `fluidPage()` layout function</span>
+my.ui &lt;-<span class="st"> </span><span class="kw">fluidPage</span>(
+  <span class="co"># A widget: a text input box (save input in the `username` key)</span>
+  <span class="kw">textInput</span>(<span class="st">&#39;username&#39;</span>, <span class="dt">label=</span><span class="st">&quot;What is your name?&quot;</span>),
+
+  <span class="co"># An output element: a text output (for the `message` key)</span>
+  <span class="kw">textOutput</span>(<span class="st">&#39;message&#39;</span>)
+)</code></pre></div>
+<p>This UI defines a <a href="https://shiny.rstudio.com/reference/shiny/latest/fluidPage.html">fluidPage</a> (where the content flows “fluidly” down the page), that contains two <em>content elements</em>: a text input box where the user can type their name, and some outputted text based on the <code>message</code> variable.</p></li>
+<li><p>The <strong>Server</strong> defines the data that will be displayed in the UI and that the user can interact with. You can think of this as an interactive R script that the user will be able to “run”: the script will take in <em>inputs</em> from the user (based on their interactions) and provide <em>outputs</em> that the UI will then display. The server users <strong>reactive expressions</strong>, which are like functions that will automatically be re-run whenever the input changes. This allows the output to be dynamic and interactive.</p>
+<p>The Server for a Shiny application is defined as a <strong>function</strong> (as opposed to the UI which is a <em>value</em>). This function takes in two <em>lists</em> as argments: an <code>input</code> and <code>output</code>. It then uses <em>render functions</em> and <em>reactive expressions</em> that assign values to the <code>output</code> list based on the <code>input</code> list. For example:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The server is a function that takes `input` and `output` args</span>
+my.server &lt;-<span class="st"> </span><span class="cf">function</span>(input, output) {
+  <span class="co"># assign a value to the `message` key in `output`</span>
+  <span class="co"># argument is a reactive expression for showing text</span>
+  output<span class="op">$</span>message &lt;-<span class="st"> </span><span class="kw">renderText</span>({
+    <span class="co"># use the `username` key from input and and return new value</span>
+    <span class="co"># for the `message` key in output</span>
+    <span class="kw">return</span>(<span class="kw">paste</span>(<span class="st">&quot;Hello&quot;</span>, input<span class="op">$</span>username))
+  })
+}</code></pre></div></li>
+</ol>
+<p>Combined, this UI and server will allow the user to type their name into an input box, and will then say “hello” to whatever name is typed in.</p>
+<p>More details about the UI and server components can be found in the sections below.</p>
+<div id="combining-ui-and-server" class="section level4">
+<h4><span class="header-section-number">15.1.1.1</span> Combining UI and Server</h4>
+<p>There are two ways of combining the UI and server:</p>
+<p>The first (newer) way is to define a file called <strong><code>app.R</code></strong>. This file should call the <a href="http://shiny.rstudio.com/reference/shiny/latest/shinyApp.html"><strong><code>shinyApp()</code></strong></a> function, which takes a UI value and Server function as arguments. For example:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># pass in the variables defined above</span>
+<span class="kw">shinyApp</span>(<span class="dt">ui =</span> my.ui, <span class="dt">server =</span> my.server)</code></pre></div>
+<p>Executing the <code>shinyApp()</code> function will start the App (you can also click the <strong>“Run App”</strong> button at the top of RStudio).</p>
 <ul>
-<li><p><strong>Git</strong>: A set of tools for tracking changes to computer code (especially when collaborating with others). This program is already installed on Macs.</p>
-<ul>
-<li><strong>GitHub</strong>: A web service for hosting code online. You don’t actually need to <em>install</em> anything GitHub (it uses <code>git</code>), but you’ll need to sign up for the service.</li>
-</ul></li>
-<li><p><strong>Bash</strong>: A <em>command-line interface</em> for controlling your computer. <code>git</code> is a command-line program so you’ll need a command shell to use it. Macs already have a Bash program called <em>Terminal</em>. On Windows, installing <code>git</code> will also install a Bash shell called <em>Git Bash</em>, or you can try the (experimental) Linux subsystem for Windows 10.</p></li>
-<li><p><strong>Atom</strong>: A lightweight text editor that supports programming in lots of different languages.</p>
-<ul>
-<li>You are welcome to use another text editor if you wish; some further suggestions are included.</li>
-</ul></li>
-<li><p><strong>R</strong>: a programming language commonly used for working with data. This will be our primary language for the quarter. “Installing R” actually means installing tools that will let your computer understand and run R code.</p></li>
-<li><p><strong>RStudio</strong>: An graphical editor for writing and running R code. This will soon become our primary development application.</p></li>
+<li><p>Note: if you change the UI or the Server, you do <strong>not</strong> need to stop and start the app; you can simply refresh the browser or viewer window and it will reload with the new UI and server.</p></li>
+<li><p>If you need to stop the App, you can hit the “Stop Sign” icon on the RStudio console.</p></li>
 </ul>
-<p>The following sections have additional information about the purpose of each component, how to install it, and alternative configurations.</p>
-<p>If you run into any installation/configuration challenges, please let others know on the <a href="https://info201-a16.slack.com">slack channel</a> so that others can anticipate the same issues.</p>
-<div id="git" class="section level2">
-<h2><span class="header-section-number">1.1</span> Git</h2>
-<p><strong><code>git</code></strong> is a version control system that provides a set of commands that allow you to manage changes to written code, particularly when collaborating with other programmers (much more on this in <a href="git-basics.html#git-basics">chapter 4</a>). To start, you’ll need to <a href="https://git-scm.com/downloads">download</a> and install the software. If you are on a Mac, <code>git</code> should already be installed.</p>
-<p>If you are using a Windows machine, this will also install a program called Git Bash, which provides a text-based interface for executing commands on your computer. For alternative/additional Windows command-line tools, see below.</p>
-<div id="github" class="section level3">
-<h3><span class="header-section-number">1.1.1</span> GitHub</h3>
-<p>GitHub is a website that is used to store copies of computer code that are being managed with <code>git</code> (think “Imgur for code”). Students in the INFO 201 course will use GitHub to turn in programming assignments.</p>
-<p>In order to use GitHub, you’ll need to <a href="https://github.com/join">create a free GitHub account</a>, if you don’t already have one. You should register a username that is identifiable as you (e.g., based on your name or your UW NetID). This will make it easier for others to determine out who contributed what code, rather than needing to figure out who ‘LeetDesigner2099’ is. This can be the start of a professional account you may use for the rest of your career!</p>
-</div>
-</div>
-<div id="command-line-tools-bash" class="section level2">
-<h2><span class="header-section-number">1.2</span> Command-line Tools (Bash)</h2>
-<p>The command-line provides a text-based interface for giving instructions to your computer (much more on this in <a href="command-line.html#command-line">chapter 2</a>). With this book, you’ll largely use the command-line for navigating your computer’s file structure, and executing commands that allows you to keep track of changes to the code you write (i.e., version control with <code>git</code>).</p>
-<p>In order to use the command-line, you will need to use a <strong>command shell</strong> (a.k.a. a <em>command prompt</em>). This is a program that provides the interface to type commands into. In particular, we’ll be working with the <a href="https://en.wikipedia.org/wiki/Bash_(Unix_shell)">Bash</a> shell, which provides a particular common set of commands common to Mac and Linux machines.</p>
-<div id="command-line-on-a-mac" class="section level3">
-<h3><span class="header-section-number">1.2.1</span> Command-line on a Mac</h3>
-<p>On a Mac you’ll want to use the built-in app called <strong>Terminal</strong>. You can open it by searching via Spotlight (hit Cmd (<code>⌘</code>) and Spacebar together, type in “terminal”, then select the app to open it), or by finding it in the Applications/Utilities folder.</p>
-</div>
-<div id="command-line-on-windows" class="section level3">
-<h3><span class="header-section-number">1.2.2</span> Command-line on Windows</h3>
-<p>On Windows, we recommend using <a href="https://git-scm.com/downloads"><strong>Git Bash</strong></a>, which you should have installed along with <code>git</code> (above). Open this program to open the command-shell. This works great, since you’ll primarily be using the command-line for performing version control.</p>
-<ul>
-<li>Note that Windows does come with its own command-prompt, called the <em>DOS Prompt</em>, but it has a different set of commands and features. <em>Powershell</em> is a more powerful version of the DOS prompt if you really want to get into the Windows Management Framework. But Bash is more common in open-source programming like we’ll be doing, and so we will be focusing on that set of commands.</li>
-</ul>
-<p>Alternatively, the 64-bit Windows 10 Anniversary update (August 2016) <em>does</em> include a beta version of an integrated Bash shell. You can access this by <a href="https://msdn.microsoft.com/en-us/commandline/wsl/install_guide">enabling the subsystem for Linux</a> and then running <code>bash</code> in the command prompt. This is currently (May 2017) “beta” technology, but will suffice for our purposes if you can get it running.</p>
-</div>
-</div>
-<div id="text-editors" class="section level2">
-<h2><span class="header-section-number">1.3</span> Text Editors</h2>
-<p>In order to produce computer code, you need somewhere to write it (and we don’t want to write it in MS Word!). There are a variety of available programs that provide an interface for editing code. A major advantage of these programs is that they provide automatic formatting/coloring for easier interpretation of the code, along with cool features like auto-completion and integration with version control.</p>
-<p>RStudio has a great built-in text editor, but you’ll sometimes want to use another text editor which is lighter weight (e.g., runs faster), more robust, or supports a different programming language. There are lots of different text editors out there, all of which have slightly different appearances and features. You only need to download and use one of the following programs (we recommend <strong>Atom</strong> as a default), but feel free to try out different ones to find something you like (and then evangelize about it to your friends!)</p>
-<div id="atom" class="section level3">
-<h3><span class="header-section-number">1.3.1</span> Atom</h3>
-<p><a href="https://atom.io/"><strong>Atom</strong></a> is a text editor built by the folks at GitHub and has been gaining in popularity. As an open source project, people are continually building (and making available) interesting/useful extensions. Its built-in spell-check is a great feature, especially for documents that require lots of written text. It also has excellent support for Markdown, a markup language you’ll be using regularly in this course.</p>
-<p>Click the “Download” button to download the installer <code>.exe</code> file, then double-click on that to install the application.</p>
-<p>Once you’ve installed Atom, the trick to using it effectively is to get comfortable with the <a href="http://flight-manual.atom.io/getting-started/sections/atom-basics/#command-palette">Command Palette</a>. If you hit <code>Cmd+Shift+P</code>, Atom will open a small window where you can search for whatever you want the editor to do. For example, if you type in <code>markdown</code> you can get list of commands related to Markdown files (including the ability to open up a preview).</p>
-<p>For more information about using Atom, see <a href="http://flight-manual.atom.io/">the manual</a>.</p>
-</div>
-<div id="visual-studio-code" class="section level3">
-<h3><span class="header-section-number">1.3.2</span> Visual Studio Code</h3>
-<p><a href="https://code.visualstudio.com/"><strong>Visual Studio Code</strong></a> (or VS Code; not to be confused with Visual Studio) is a free, open-source editor developed by Microsoft—yes, really. While it focuses on web programming and JavaScript, it readily supports lots of languages including Markdown and R and provides a number of extensions for adding even more features. It has a similar <em>command palette</em> to Atom, but isn’t quite as nice for editing Markdown specifically. Although fairly new, it is updated regularly and has become one of my main editors for programming.</p>
-</div>
-<div id="sublimetext" class="section level3">
-<h3><span class="header-section-number">1.3.3</span> SublimeText</h3>
-<p><a href="https://www.sublimetext.com/3"><strong>SublimeText</strong></a> is a very popular text editor with excellent defaults and a variety of available extensions (though you’ll need to manage and install extensions to achieve the functionality offered by other editors out of the box). While the software can be used for free, every 20 or so saves it will prompt you to purchase the full version. This is my application of choice for when just want to write a plain text file.</p>
-</div>
-</div>
-<div id="rstudio" class="section level2">
-<h2><span class="header-section-number">1.4</span> RStudio</h2>
-<p>The primary programming language you will use throughout the course is <code>R</code>. It’s a very powerful statistical programming language that is built to work well with large and diverse datasets. While you are able to execute <code>R</code> scripts without an interface, the <strong>RStudio</strong> application provides a wonderful way to engage with the <code>R</code> language.</p>
-<p>To install the RStudio program, select the <strong>installer</strong> for your operating system from the <a href="https://www.rstudio.com/products/rstudio/download/">downloads page</a>. Make sure to download the <strong><em>free</em></strong> version:</p>
+<p>Using this function allows you to define your entire application (UI and Server) in a single file (which <strong>must</strong> be named <code>app.R</code>). This approach is good for simple applications that you wish to be able to share with others, since the entire application code can be listed in a single file.</p>
+<p>However, it is also possible to define the UI and server as <em>separate</em> files. This allows you to keep the presentation (UI) separated from the logic (server) of your application, making it easier to maintain and change in the future. To do this, you define two separate files: <strong><code>ui.R</code></strong> for the UI and <strong><code>server.R</code></strong> for the Server (the files <strong>must</strong> be named <code>ui.R</code> and <code>server.R</code>). These files call the functions <code>shinyUI()</code> and <code>shinyServer()</code> respectively to create the UI and server, and then RStudio will automatically combine these files together into an application:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">### In ui.R file
+my.ui &lt;-<span class="st"> </span><span class="kw">fluidPage</span>(
+  <span class="co"># define widgets</span>
+)
+
+<span class="kw">shinyUI</span>(my.ui)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">### In server.R file
+my.server &lt;-<span class="st"> </span><span class="cf">function</span>(input, output) {
+  <span class="co"># define output reactive expressions</span>
+}
+
+<span class="kw">shinyServer</span>(my.server)</code></pre></div>
+<p>You can then run the app by using the <strong>“Run App”</strong> button at the top of RStudio:</p>
 <div class="figure">
-<img src="img/setup/rstudio-download.png" title="RStudio download selection" alt="File to choose for downloading RStudio. Image may not show the latest version." />
-<p class="caption">File to choose for downloading RStudio. Image may not show the latest version.</p>
+<img src="img/shiny/run-app.png" title="Run App button" alt="Use RStudio to run a shiny app defined in separate UI and Server files." />
+<p class="caption">Use RStudio to run a shiny app defined in separate UI and Server files.</p>
 </div>
-<p>Once the download completes, double-click on the <code>.exe</code> or <code>.dmg</code> file to run the installer. Simply follow the steps of the installer, and you should be prepared to use RStudio.</p>
-<p>By downloading RStudio, you will also install the R programming language, if it is not already present in your operating system. However, if there are any problems with that you can also <a href="https://cran.rstudio.com/">install R separately</a>. Click on the download page for your operating system in order to find a link to the installer. On a Mac you’re looking for the <code>.pkg</code> file, and for Windows you want to look in the <code>base</code> section (follow the link to “install R for the first time”).</p>
+<p>This chapter will primarily use the “single file” approach for compactness and readability, but you are encouraged to break up the UI and server into separate files for your own, larger applications.</p>
+<ul>
+<li>Note that it is also possible to simply define the (e.g.) <code>my.ui</code> and <code>my.server</code> variables in separate files, and then use <code>source()</code> to load them into the <code>app.R</code> file and pass them into <code>shinyApp()</code>.</li>
+</ul>
 </div>
-<div id="resources" class="section level2 unnumbered">
+</div>
+<div id="the-ui" class="section level3">
+<h3><span class="header-section-number">15.1.2</span> The UI</h3>
+<p>The UI defines how the app will be displayed in the browser. You create a UI by calling a <strong>layout function</strong> such as <code>fluidPage()</code>, which will return a UI definition that can be used by the <code>shinyUI()</code> or <code>shinyApp()</code> functions.</p>
+<p>You specify the “content” that you want the layout to contain (and hence the app to show) by passing each <strong>content element</strong> (piece of content) as an <em>argument</em> to that function:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># a &quot;pseudocode&quot; example, calling a function with arguments</span>
+ui &lt;-<span class="st"> </span><span class="kw">fluidPage</span>(element1, element2, element3)</code></pre></div>
+<p>Content elements are defined by calling specific <em>functions</em> that create them: for example <code>h1()</code> will create an element that has a first-level heading, <code>textInput()</code> will create an element where the user can enter text, and <code>textOutput</code> will create an element that can have dynamic (changing) content. Usually these content elements are defined as <em>nested</em> (anonymous) variables, each on its own line:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># still just calling a function with arguments!</span>
+ui &lt;-<span class="st"> </span><span class="kw">fluidPage</span>(
+  <span class="kw">h1</span>(<span class="st">&quot;My App&quot;</span>),  <span class="co"># first argument</span>
+  <span class="kw">textInput</span>(<span class="st">&#39;username&#39;</span>, <span class="dt">label=</span><span class="st">&quot;What is your name?&quot;</span>),  <span class="co"># second argument</span>
+  <span class="kw">textOutput</span>(<span class="st">&#39;message&#39;</span>)  <span class="co"># third argument</span>
+)</code></pre></div>
+<p>Note that layout functions <em>themselves return content elements</em>, meaning it is possible to include a layout inside another layout. This allows you to create complex layouts by combining multiple layout elements together. For example:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ui &lt;-<span class="st"> </span><span class="kw">fluidPage</span>(   <span class="co"># UI is a fluid page</span>
+  <span class="kw">titlePanel</span>(<span class="st">&quot;My Title&quot;</span>),  <span class="co"># include panel with the title (also sets browser title)</span>
+
+  <span class="kw">sidebarLayout</span>(   <span class="co"># layout the page in two columns</span>
+    <span class="kw">sidebarPanel</span>(  <span class="co"># specify content for the &quot;sidebar&quot; column</span>
+      <span class="kw">p</span>(<span class="st">&quot;sidebar panel content goes here&quot;</span>)
+    ),
+    <span class="kw">mainPanel</span>(     <span class="co"># specify content for the &quot;main&quot; column</span>
+      <span class="kw">p</span>(<span class="st">&quot;main panel content goes here&quot;</span>)
+    )
+  )
+)</code></pre></div>
+<p>See the <a href="http://shiny.rstudio.com/reference/shiny/latest/">Shiny documentation</a> and <a href="http://shiny.rstudio.com/gallery/">gallery</a> for details and examples of doing complex application layouts.</p>
+<p class="alert alert-info">
+Fun Fact: much of Shiny’s styling and layout structure is based on the <a href="http://getbootstrap.com/">Bootstrap</a> web framework.
+</p>
+<p>You can include <em>static</em> (unchanging) content in a Shiny UI layout—this is similar to the kinds of content you would write in Markdown (rather than inline R) when using R Markdown. However, you usually don’t specify this content using Markdown syntax (though it is possible to <a href="http://shiny.rstudio.com/reference/shiny/latest/include.html">include a markdown file</a>’s content). Instead, you include content functions that produce HTML, the language that Markdown is converted to when you look at it in the browser. These functions include:</p>
+<ul>
+<li><code>p()</code> for creating paragraphs, the same as plain text in Markdown</li>
+<li><code>h1()</code>, <code>h2()</code>, <code>h3()</code> etc for creating headings, the same as <code># Heading 1</code>, <code>## Heading 2</code>, <code>### Heading 3</code> in Markdown</li>
+<li><code>em()</code> for creating <em>emphasized</em> (italic) text, the same as <code>_text_</code> in Markdown</li>
+<li><code>strong()</code> for creating <strong>strong</strong> (bolded) text, the same as <code>**text**</code> in Markdown</li>
+<li><code>a(text, href='url')</code> for creating hyperlinks (anchors), the same as <code>[text](url)</code> in Markdown</li>
+<li><code>img(text, src='url')</code> for including images, the same as <code>![text](url)</code> in Markdown</li>
+</ul>
+<p>There are may other methods as well, see <a href="http://shiny.rstudio.com/tutorial/lesson2/">this tutorial lesson</a> for a list. If you are <a href="https://info343-au16.github.io/#/tutorials/html">familiar with HTML</a>, then these methods will seem familiar; you can also write content in HTML directly using the <code>tag()</code> content function.</p>
+<!-- TODO: Add HTML tutorial! -->
+<div id="control-widgets-and-reactive-outputs" class="section level4">
+<h4><span class="header-section-number">15.1.2.1</span> Control Widgets and Reactive Outputs</h4>
+<p>It is more common to include <strong>control widgets</strong> as content elements in your UI layout. Widgets are <em>dynamic</em> (changing) control elements that the user can interact with. Each stores a <strong>value</strong> that the user has entered, whether by typing into a box, moving a slider, or checking a button. When the user changes their input, the stored <em>value</em> automatically changes as well.</p>
+<div class="figure">
+<img src="img/shiny/basic-widgets.png" title="control widgets" alt="Examples of control widgets (image from shiny.rstudio.com)." />
+<p class="caption">Examples of control widgets (image from shiny.rstudio.com).</p>
+</div>
+<p>Like other content elements, widgets are created by calling an appropriate function. For example:</p>
+<ul>
+<li><code>textInput()</code> creates a box in which the user can enter text</li>
+<li><code>sliderInput()</code> creates a slider</li>
+<li><code>selectInput()</code> creates a dropdown menu the user can choose from</li>
+<li><code>checkboxInput()</code> creates a box the user can check (using <code>checkboxGroupInput()</code> to group them)</li>
+<li><code>radioButtons()</code> creates “radio” buttons (which the user can select only one of at a time)</li>
+</ul>
+<p>See <a href="http://shiny.rstudio.com/reference/shiny/latest/">the documentation</a>, and <a href="http://shiny.rstudio.com/tutorial/lesson3/">this tutorial lesson</a> for a complete list.</p>
+<p>All widget functions take at least two arguments:</p>
+<ul>
+<li>A <strong>name</strong> (as a string) for the widget’s value. This will be the <strong>“key”</strong> that will allow the server to be able to access the value the user has inputted (think: the key in the <code>input</code> <em>list</em>).</li>
+<li>A <strong>label</strong> (a string or content element described above) that will be shown alongside the widget and tell the user what the value represents. Note that this can be an empty string (<code>&quot;&quot;</code>) if you don’t want to show anything.</li>
+</ul>
+<p>Other arguments may be required by a particular widget—for example, a slider’s <code>min</code> and <code>max</code> values:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># this function would be nested in a layout function (e.g., `fluidPage()`)</span>
+<span class="kw">sliderInput</span>(<span class="st">&#39;age&#39;</span>,              <span class="co"># key this value will be assigned to</span>
+            <span class="st">&quot;Age of subjects&quot;</span>,  <span class="co"># label</span>
+            <span class="dt">min =</span> <span class="dv">18</span>,           <span class="co"># minimum slider value</span>
+            <span class="dt">max =</span> <span class="dv">80</span>,           <span class="co"># maximum slider value</span>
+            <span class="dt">value =</span> <span class="dv">42</span>          <span class="co"># starting value</span>
+           )</code></pre></div>
+<p>Widgets are used to provide <strong>inputs <em>to</em></strong> the Server; see the below section for how to use these inputs, as well as examples from <a href="http://shiny.rstudio.com/gallery/">the gallery</a>.</p>
+<p>In order to display <strong>outputs <em>from</em></strong> the Server, you include a <strong>reactive output</strong> element in your UI layout. These are elements similar to the basic content elements, but instead of just displaying <em>static</em> (unchanging) content they can display <em>dynamic</em> (changing) content produced by the Server.</p>
+<p>As with other content elements, reactive outputs are creating by calling an appropriate function. For example:</p>
+<ul>
+<li><code>textOutput()</code> displays output as plain text (note this output can be nested in a content element for formatting)</li>
+<li><code>tableOutput()</code> displays output as a data table (similar to <code>kable()</code> in R Markdown). See also <code>dataTableOutput()</code> for an interactive version!</li>
+<li><code>plotOutput()</code> displays a graphical plot, such as one created with <code>ggplot2</code></li>
+</ul>
+<p>Each of these functions takes as an argument the <strong>name</strong> (as a string) of the value that will be displayed. This is the <strong>“key”</strong> that allows it to access the value the Server is outputting. Note that the functions may take additional arguments as well (e.g., to specify the size of a plot); see <a href="http://shiny.rstudio.com/reference/shiny/latest/">the documentation</a> for details.</p>
+</div>
+</div>
+<div id="the-server" class="section level3">
+<h3><span class="header-section-number">15.1.3</span> The Server</h3>
+<p>The Server defines how the data inputted by the user will be used to create the output displayed by the app—that is, how the <em>control widgets</em> and <em>reactive outputs</em> will be connected. You create a Server by <em>defining a new function</em> (not calling a provided one):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">server &lt;-<span class="st"> </span><span class="cf">function</span>(input, output){
+  <span class="co"># assign values to `output` here</span>
+}</code></pre></div>
+<p>Note that this is <em>just a normal function</em> that happens two take <strong>lists</strong> as arguments. That means you can include the same kinds of code as you normally would—though that code will only be run once (when the application is first started) unless defined as part of a reactive expression.</p>
+<p>The first argument is a list of any values defined by the <em>control widgets</em>: each <strong>name</strong> in a control widget will be a <strong>key</strong> in this list. For example, using the above <code>sliderInput()</code> example would cause the list to have an <code>age</code> key (referenced as <code>input$age</code>). This allows the Server to access any data that the user has inputted, using the key names defined in the UI. Note that the values in this list <em>will change as the user interacts with the UI’s control widgets</em>.</p>
+<p>The purpose of the Server function is to assign new <em>values</em> to the <code>output</code> argument list (each with an appropriate <em>key</em>). These values will then be displayed by the <em>reactive outputs</em> defined in the UI. To make it so that the values can actually be displayed by by the UI, the values assigned to this list need to be the results of <strong>Render Functions</strong>. Similar to creating widgets or reactive outputs, different functions are associated with different types of output the server should produce. For example:</p>
+<ul>
+<li><code>renderText()</code> will produce text (character strings) that can be displayed (i.e., by <code>textOutput()</code> in the UI)</li>
+<li><code>renderTable()</code> will produce a table that can be displayed (i.e., by <code>tableOutput()</code> in the UI)</li>
+<li><code>renderPlot()</code> will produce a graphical plot that can be displayed (i.e., by <code>plotOutput()</code> in the UI)</li>
+</ul>
+<p>Render functions take as an argument a <strong>Reactive Expression</strong>. This is a lot like a function: it is a <strong>block</strong> of code (in braces <strong><code>{}</code></strong>) that <strong>returns</strong> the value which should be rendered. For example:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">output<span class="op">$</span>msg &lt;-<span class="st"> </span><span class="kw">renderText</span>({
+  <span class="co"># code goes here, just like any other function</span>
+  my.greeting &lt;-<span class="st"> &quot;Hello&quot;</span>
+
+  <span class="co"># code should always draw upon a key from the `input` variable</span>
+  message &lt;-<span class="st"> </span><span class="kw">paste</span>(my.greeting, input<span class="op">$</span>username)
+
+  <span class="co"># return the variable that will be rendered</span>
+  <span class="kw">return</span>(message)
+})</code></pre></div>
+<p>The only difference between writing a <em>reactive expression</em> and a function is that you only include the <em>block</em> (the braces and the code inside of them): you don’t use the keyword <code>function</code> and don’t specify a set of arguments.</p>
+<p class="alert alert-info">
+This technically defines a <em>closure</em>, which is a programming concept used to encapsulate functions and the context for those functions.
+</p>
+<p>These <em>reactive expressions</em> will be “re-run” <strong>every time</strong> one of the <code>input</code> values that it references changes. So if the user interacts with the <code>username</code> control widget (and thereby changes the value of the <code>input</code> list), the expression in the above <code>renderText()</code> will be executed again, returning a new value that will be assigned to <code>output$msg</code>. And since <code>output$msg</code> has now changed, any <em>reactive output</em> in the UI (e.g., a <code>textOutput()</code>) will update to show the latest value. This makes the app interactive!</p>
+<div id="multiple-views" class="section level4">
+<h4><span class="header-section-number">15.1.3.1</span> Multiple Views</h4>
+<p>It is quite common in a Shiny app to produce <em>lots</em> of output variables, and thus to have multiple reactive expressions. For example:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">server &lt;-<span class="st"> </span><span class="cf">function</span>(input, output) {
+  <span class="co"># render a histogram plot</span>
+  output<span class="op">$</span>hist &lt;-<span class="st"> </span><span class="kw">renderPlot</span>({
+    uniform.nums &lt;-<span class="st"> </span><span class="kw">runif</span>(input<span class="op">$</span>num, <span class="dv">1</span>, <span class="dv">10</span>)  <span class="co"># random nums between 1 and 10</span>
+    <span class="kw">return</span>( <span class="kw">hist</span>(uniform.nums) )  <span class="co"># built-in plotting for simplicity</span>
+  })
+
+  <span class="co"># render the counts</span>
+  output<span class="op">$</span>counts &lt;-<span class="st"> </span><span class="kw">renderPrint</span>({
+    uniform.nums &lt;-<span class="st"> </span><span class="kw">runif</span>(input<span class="op">$</span>num, <span class="dv">1</span>, <span class="dv">10</span>)  <span class="co"># random nums between 1 and 10</span>
+    counts &lt;-<span class="st"> </span><span class="kw">factor</span>(<span class="kw">cut</span>(uniform.nums, <span class="dt">breaks=</span><span class="dv">1</span><span class="op">:</span><span class="dv">10</span>))  <span class="co"># factor</span>
+    <span class="kw">return</span>( <span class="kw">summary</span>(counts) )  <span class="co"># simple vector of counts</span>
+  })
+}</code></pre></div>
+<p>If you look at the above example though, you’ll notice that each render function produces a set of random numbers… which means each will produce a <em>different</em> set of numbers! The histogram and the table won’t match!</p>
+<p>This is an example of where you want to share a single piece of data (a single <strong>model</strong>) between multiple different renditions (multiple <strong>views</strong>). Effectively, you want to define a shared variable (the <code>uniform.nums</code>) that can be referenced by both render functions. But since you need that shared variable to be able to <em>update</em> whenever the <code>input</code> changes, you need to make it be a <em>reactive expression</em> itself. You can do this by using the <strong><code>reactive()</code></strong> function:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">server &lt;-<span class="st"> </span><span class="cf">function</span>(input, output) {
+  <span class="co"># define a reactive variable</span>
+  uniform.nums &lt;-<span class="st"> </span><span class="kw">reactive</span>({
+    <span class="kw">return</span>( <span class="kw">runif</span>(input<span class="op">$</span>num, <span class="dv">1</span>, <span class="dv">10</span>) )  <span class="co"># just like for a render function</span>
+  })
+
+  <span class="co"># render a histogram plot</span>
+  output<span class="op">$</span>hist &lt;-<span class="st"> </span><span class="kw">renderPlot</span>({
+    <span class="kw">return</span>( <span class="kw">hist</span>(<span class="kw">uniform.nums</span>()) )  <span class="co"># call the reactive variable AS A FUNCTION</span>
+  })
+
+  <span class="co"># render the counts</span>
+  output<span class="op">$</span>counts &lt;-<span class="st"> </span><span class="kw">renderPrint</span>({
+    counts &lt;-<span class="st"> </span><span class="kw">factor</span>(<span class="kw">cut</span>(<span class="kw">uniform.nums</span>(), <span class="dt">breaks=</span><span class="dv">1</span><span class="op">:</span><span class="dv">10</span>))  <span class="co"># call the reactive variable AS A FUNCTION</span>
+    <span class="kw">return</span>( <span class="kw">summary</span>(counts) )
+  })
+}</code></pre></div>
+<p>The <code>reactive()</code> function lets you define a single “variable” that is a <em>reactive function</em> which can be called from within the render functions. Importantly, the value returned by this function (the <code>uniform.nums()</code>) only changes <strong>when a referenced <code>input</code> changes</strong>. Thus as long as <code>input$num</code> stays the same, <code>uniform.nums()</code> will return the same value.</p>
+<p>This is very powerful for allowing multiple <strong>views</strong> of a single piece of data: you can have a single source of data displayed both graphically and textually, with both views linked off of the same processed data table. Additionally, it can help keep your code more organized and readable, and avoid needing to duplicate any processing.</p>
+</div>
+</div>
+</div>
+<div id="publishing-shiny-apps" class="section level2">
+<h2><span class="header-section-number">15.2</span> Publishing Shiny Apps</h2>
+<p>Sharing a Shiny App with the world is a bit more involved than simply pushing the code to GitHub. You can’t just use GitHub pages to host the code because, in addition to the HTML UI, you need an R interpreter session to run the Server that the UI can connect to (and GitHub does not provide R interpreters)!</p>
+<p>While there are a few different ways of “hosting” Shiny Apps, in this course you’ll use the simplest one: hosting through <a href="https://www.shinyapps.io"><strong>shinyapps.io</strong></a>. shinyapps.io is a platform for hosting and running Shiny Apps; while large applications cost money, anyone can deploy a simple app (like the ones you’ll create in this course) for free.</p>
+<p>In order to host your app on shinyapps.io, you’ll need to <a href="https://www.shinyapps.io/admin/#/signup">create a free account</a>. Note that you can sign up with GitHub or your Google/UW account. Follow the site’s instructions to</p>
+<ol style="list-style-type: decimal">
+<li>Select an account name (use something professional, like you used when siging up with GitHub)</li>
+<li>Install the required <code>rsconnect</code> package (may be included with RStudio)</li>
+<li><p>Set your authorization token (“password”). Just click the green “Copy to Clipboard” button, and then paste that into the <strong>Console</strong> in RStudio. You should only need to do this once.</p>
+<p class="alert alert-warning">
+Don’t worry about “Step 3 - Deploy”; you’ll do that through RStudio directly!
+</p></li>
+</ol>
+<p>After you’ve set up an account, you can <em>Run</em> your application (as above) and hit the <strong>Publish</strong> button in the upper-right corner:</p>
+<div class="figure">
+<img src="img/shiny/publish-app.png" title="shiny publish button" alt="How to publish a running Shiny App to shinyapps.io." />
+<p class="caption">How to publish a running Shiny App to shinyapps.io.</p>
+</div>
+<p>This will put your app online, available at</p>
+<pre><code>https://USERNAME.shinyapps.io/APPNAME/</code></pre>
+<p><strong>Important</strong> Publishing to shinyapps.io is one of the major “pain points” in working with Shiny. For the best experience, be sure to:</p>
+<ol style="list-style-type: decimal">
+<li><p>Always test and debug your app <em>locally</em> (e.g., on your own computer, by running the App through RStudio). Make sure it works on your machine before you try to put it online.</p></li>
+<li><p>Use correct folder structures and <em>relative paths</em>. All of your app should be in a single folder (usually named after the project). Make sure any <code>.csv</code> or <code>.R</code> files referenced are inside the app folder, and that you use relative paths to refer to them. Do not include any <code>setwd()</code> statements in your code; you should only set the working directory through RStudio (because shinyapps.io will have its own working directory).</p></li>
+<li><p>It is possible to <a href="http://docs.rstudio.com/shinyapps.io/applications.html#logging">see the logs for your deployed app</a>, which may include errors explaining any problems that arise when you deploy your app.</p></li>
+</ol>
+<p>For more options and details, see <a href="http://docs.rstudio.com/shinyapps.io/index.html">the shinyapps.io documentation</a>.</p>
+</div>
+<div id="resources-14" class="section level2 unnumbered">
 <h2>Resources</h2>
-<p>Links to the recommended software are collected here for easy access:</p>
 <ul>
-<li><a href="https://git-scm.com/downloads">git (and Git Bash)</a>
-<ul>
-<li><a href="https://github.com/join">GitHub</a> (sign up)</li>
-<li>optional: <a href="https://msdn.microsoft.com/en-us/commandline/wsl/install_guide">Bash on Windows</a></li>
-</ul></li>
-<li><a href="https://atom.io/">Atom</a></li>
-<li><a href="https://cran.rstudio.com/">R</a></li>
-<li><a href="https://www.rstudio.com/products/rstudio/download3/">RStudio</a></li>
+<li><a href="http://shiny.rstudio.com/articles/">Shiny Documentation</a></li>
+<li><a href="http://shiny.rstudio.com/articles/basics.html">Shiny Basics Article</a></li>
+<li><a href="http://shiny.rstudio.com/tutorial/">Shiny Tutorial</a> (video; links to text at bottom)</li>
+<li><a href="https://www.rstudio.com/wp-content/uploads/2016/01/shiny-cheatsheet.pdf">Shiny Cheatsheet</a></li>
+<li><a href="http://shiny.rstudio.com/gallery/">Shiny Example Gallery</a></li>
+<li><a href="http://docs.rstudio.com/shinyapps.io/index.html">shinyapps.io User Guide</a></li>
+<li><a href="http://shiny.rstudio.com/articles/plot-interaction.html">Interactive Plots with Shiny</a> (see also <a href="https://blog.rstudio.org/2015/06/16/shiny-0-12-interactive-plots-with-ggplot2/">here</a>)</li>
+<li><a href="https://shiny.rstudio.com/articles/interactive-docs.html">Interactive Docs with Shiny</a></li>
 </ul>
 
 </div>
@@ -440,8 +615,8 @@ Note that iSchool lab machines should have all appropriate software already inst
           </div>
         </div>
       </div>
-<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="command-line.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="git-branches.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -470,7 +645,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/info201/book/edit/master/setup.Rmd",
+"link": "https://github.com/info201/book/edit/master/shiny.Rmd",
 "text": "Edit"
 },
 "download": ["tech-foundations-of-informatics.pdf", "tech-foundations-of-informatics.epub"],
